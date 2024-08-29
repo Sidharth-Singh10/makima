@@ -1,0 +1,7 @@
+#ifdef _WIN32
+    // Windows-specific code
+#elif defined(__linux__)
+    // Linux-specific code
+#elif defined(__APPLE__) && defined(__MACH__)
+    // macOS-specific code
+
