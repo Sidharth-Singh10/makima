@@ -1,0 +1,5 @@
+Abstract Syntax Tree 
+
+It represents the structure of the program based on the input entered by the user. 
+At the leaves of this tree are numbers and operators - the actual data to be processed. 
+At the branches are the rules used to produce this part of the tree - the information on how to traverse and evaluate it.
