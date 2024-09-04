@@ -49,7 +49,7 @@ int main(int argc, char *argv[])
   // Define them with the following Language
   mpca_lang(MPCA_LANG_DEFAULT,
             "                                                     \
-    number   : /-?[0-9]+/ ;                             \
+    number   : /-?[0-9]+(\\.[0-9]+)?/ ;                             \
     operator : '+' | '-' | '*' | '/' | '^' | \"max\" | \"min\";  \
     expr     : <number> | '(' <operator> <expr>+ ')' ;  \
     maki    : /^/  <operator><expr>+ /$/ ;             \
