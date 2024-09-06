@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "eval.h"
+// #include "eval.h"
 #include "errors.h"
 
 /* If we are compiling on Windows compile these functions */
@@ -34,15 +34,77 @@ void add_history(char *unused) {}
 #endif
 
 mpc_parser_t *Number;
-mpc_parser_t *Operator;
+mpc_parser_t *Symbol;
+mpc_parser_t *Sexpr;
 mpc_parser_t *Expr;
 mpc_parser_t *maki;
+
+devilval *devilval_read_num(mpc_ast_t *t)
+{
+  errno = 0;
+  long x = strtol(t->contents, NULL, 10);
+  return errno != ERANGE ? devilval_num(x) : devilval_err("invalid number");
+}
+
+devilval *devilval_add(devilval *v, devilval *x)
+{
+  v->count++;
+  v->cell = realloc(v->cell, sizeof(devilval *) * v->count);
+  v->cell[v->count - 1] = x;
+  return v;
+}
+
+devilval *devilval_read(mpc_ast_t *t)
+{
+
+  /* If Symbol or Number return conversion to that type */
+  if (strstr(t->tag, "number"))
+  {
+    return devilval_read_num(t);
+  }
+  if (strstr(t->tag, "symbol"))
+  {
+    return devilval_sym(t->contents);
+  }
+
+  /* If root (>) or sexpr then create empty list */
+  devilval *x = NULL;
+  if (strcmp(t->tag, ">") == 0)
+  {
+    x = devilval_sexpr();
+  }
+  if (strstr(t->tag, "sexpr"))
+  {
+    x = devilval_sexpr();
+  }
+
+  /* Fill this list with any valid expression contained within */
+  for (int i = 0; i < t->children_num; i++)
+  {
+    if (strcmp(t->children[i]->contents, "(") == 0)
+    {
+      continue;
+    }
+    if (strcmp(t->children[i]->contents, ")") == 0)
+    {
+      continue;
+    }
+    if (strcmp(t->children[i]->tag, "regex") == 0)
+    {
+      continue;
+    }
+    x = devilval_add(x, devilval_read(t->children[i]));
+  }
+
+  return x;
+}
 
 int main(int argc, char *argv[])
 {
   // Create parsers
   Number = mpc_new("number");
-  Operator = mpc_new("operator");
+  Symbol = mpc_new("symbol");
+  Sexpr = mpc_new("sexpr");
   Expr = mpc_new("expr");
   maki = mpc_new("maki");
 
@@ -50,11 +112,12 @@ int main(int argc, char *argv[])
   mpca_lang(MPCA_LANG_DEFAULT,
             "                                                     \
     number   : /-?[0-9]+(\\.[0-9]+)?/ ;                             \
-    operator : '+' | '-' | '*' | '/' | '^' | \"max\" | \"min\";  \
-    expr     : <number> | '(' <operator> <expr>+ ')' ;  \
-    maki    : /^/  <operator><expr>+ /$/ ;             \
+    symbol : '+' | '-' | '*' | '/' | '^' | \"max\" | \"min\";  \
+    sexpr  : '(' <expr>* ')' ; \
+    expr   : <number> | <symbol> | <sexpr> ; \
+    maki    : /^/ <expr>* /$/ ;             \
   ",
-            Number, Operator, Expr, maki);
+            Number, Symbol, Sexpr, Expr, maki);
 
   puts("makima version 0.0.0.2");
   puts("Press Ctrl + C to exit ");
@@ -70,9 +133,9 @@ int main(int argc, char *argv[])
       /* On Success Print the AST */
       mpc_ast_print(r.output);
 
-    devilval result = eval(r.output);
-    devilval_println(result);
-      mpc_ast_delete(r.output);
+      devilval *x = devilval_read(r.output);
+      devilval_println(x);
+      devilval_del(x);
     }
     else
     {
@@ -85,6 +148,6 @@ int main(int argc, char *argv[])
   }
 
   /* Cleanup */
-  mpc_cleanup(4, Number, Operator, Expr, maki);
+  mpc_cleanup(5, Number, Symbol, Sexpr, Expr, maki);
   return 0;
 }

@@ -1,89 +1,82 @@
-#include <stdio.h>
-typedef struct
-{
-    int type;
-    union
-    {
-        long l;
-        double dec;
-        int err;
-    } data;
+#include "errors.h"
+#include <string.h>
 
-} devilval;
-
-// enums under the hood are assinged to integer constant.
-
-// Enumeration of Possible DevilVals Types
-enum
-{
-    DEVILVAL_NUM,
-    DEVILVAL_DEC,
-    DEVILVAL_ERR
-};
-
-//  Create Enumeration of Possible Error Types
-enum
-{
-    DERR_DIV_ZERO,
-    DERR_BAD_OP,
-    DERR_BAD_NUM
-};
-
-/* Create a new number type devilval */
-devilval devilval_num(long x)
-{
-    devilval v;
-    v.type = DEVILVAL_NUM;
-    v.data.l = x;
+devilval* devilval_num(long x) {
+    devilval* v = malloc(sizeof(devilval));
+    v->type = DEVILVAL_NUM;
+    v->data.l = x;
     return v;
 }
 
-devilval devilval_dec(double x) {
-    devilval v;
-    v.type = DEVILVAL_DEC;
-    v.data.dec = x;
+devilval* devilval_dec(double x) {
+    devilval* v = malloc(sizeof(devilval));
+    v->type = DEVILVAL_DEC;
+    v->data.dec = x;
     return v;
 }
 
-/* Create a new error type devilval */
-devilval devilval_err(int x)
-{
-    devilval v;
-    v.type = DEVILVAL_ERR;
-    v.data.err = x;
+devilval* devilval_err(char* m) {
+    devilval* v = malloc(sizeof(devilval));
+    v->type = DEVILVAL_ERR;
+    v->err = malloc(strlen(m) + 1);
+    strcpy(v->err, m);
     return v;
 }
 
-void devilval_print(devilval v)
-{
-    switch (v.type)
-    {
+devilval* devilval_sym(char* s) {
+    devilval* v = malloc(sizeof(devilval));
+    v->type = DEVILVAL_SYM;
+    v->sym = malloc(strlen(s) + 1);
+    strcpy(v->sym, s);
+    return v;
+}
 
-    case DEVILVAL_NUM:
-        printf("%li", v.data.l);
+devilval* devilval_sexpr(void) {
+    devilval* v = malloc(sizeof(devilval));
+    v->type = DEVILVAL_SEXPR;
+    v->count = 0;
+    v->cell = NULL;
+    return v;
+}
+
+void devilval_del(devilval* v) {
+    switch (v->type) {
+        case DEVILVAL_NUM: break;
+        case DEVILVAL_DEC: break;
+        case DEVILVAL_ERR: free(v->err); break;
+        case DEVILVAL_SYM: free(v->sym); break;
+        case DEVILVAL_SEXPR:
+            for (int i = 0; i < v->count; i++) {
+                devilval_del(v->cell[i]);
+            }
+            free(v->cell);
         break;
-    
-    case DEVILVAL_DEC:
-        printf("%f", v.data.dec);
-        break;
+    }
+    free(v);
+}
 
-    case DEVILVAL_ERR:
-
-        if (v.data.err == DERR_DIV_ZERO)
-            printf("Error: Only Gojo can See the INFINITY");
-
-        if (v.data.err == DERR_BAD_OP)
-            printf("Error: Pochita doesn't recognize  Operator!");
-        
-        if (v.data.err == DERR_BAD_NUM)
-            printf("Error: Pochita sees a Bad Number!");
-
-        break;
+void devilval_print(devilval* v) {
+    switch (v->type) {
+        case DEVILVAL_NUM: printf("%li", v->data.l); break;
+        case DEVILVAL_DEC: printf("%f", v->data.dec); break;
+        case DEVILVAL_ERR: printf("Error: %s", v->err); break;
+        case DEVILVAL_SYM: printf("%s", v->sym); break;
+        case DEVILVAL_SEXPR: devilval_expr_print(v, '(', ')'); break;
     }
 }
 
-void devilval_println(devilval v)
-{
+void devilval_println(devilval* v) {
     devilval_print(v);
     putchar('\n');
+}
+
+void devilval_expr_print(devilval* v, char open, char close) {
+    putchar(open);
+    for (int i = 0; i < v->count; i++) {
+        devilval_print(v->cell[i]);
+        if (i != (v->count - 1)) {
+            putchar(' ');
+        }
+    }
+    putchar(close);
 }
