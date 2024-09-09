@@ -31,12 +31,12 @@ enum {
 };
 
 // Function declarations
-void devilval_del(devilval* v);
 devilval* devilval_num(long x);
 devilval* devilval_dec(double x);
 devilval* devilval_err(char* m);
 devilval* devilval_sym(char* s);
 devilval* devilval_sexpr(void);
+void devilval_del(devilval* v);
 void devilval_print(devilval* v);
 void devilval_println(devilval* v);
 void devilval_expr_print(devilval* v, char open, char close);

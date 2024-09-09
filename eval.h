@@ -5,7 +5,10 @@
 #include "mpc.h"
 #include "errors.h"
 
-devilval eval_op(long x, char *op, long y);
-devilval eval(mpc_ast_t *t);
+devilval* devilval_pop(devilval* v, int i);
+devilval* devilval_take(devilval* v, int i);
+devilval* devilval_eval(devilval* v);
+devilval* builtin_op(devilval* a, char* op);
+devilval* devilval_eval_sexpr(devilval* v);
 
 #endif
