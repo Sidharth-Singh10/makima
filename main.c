@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-// #include "eval.h"
+#include "eval.h"
 #include "errors.h"
 
 /* If we are compiling on Windows compile these functions */
@@ -133,7 +133,7 @@ int main(int argc, char *argv[])
       /* On Success Print the AST */
       mpc_ast_print(r.output);
 
-      devilval *x = devilval_read(r.output);
+      devilval *x = devilval_eval(devilval_read(r.output));
       devilval_println(x);
       devilval_del(x);
     }
